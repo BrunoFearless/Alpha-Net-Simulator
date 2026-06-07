@@ -9,6 +9,9 @@ import { CommunitiesView } from './views/Communities';
 import { NotificationsView } from './views/Notifications';
 import { MessagesView } from './views/Messages';
 import { SettingsView } from './views/Settings';
+import { DataMiningView } from './views/DataMining';
+import { MissionsView } from './views/Missions';
+import { AvatarEditorView } from './views/AvatarEditor';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -38,6 +41,12 @@ export default function App() {
         return <HomeFeed />;
       case 'modules':
         return <ModuleHub />;
+      case 'mining':
+        return <DataMiningView />;
+      case 'missions':
+        return <MissionsView />;
+      case 'avatar':
+        return <AvatarEditorView />;
       case 'profile':
         return <ProfileView />;
       case 'communities':

@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from 'react';
+import React, { FC, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { PaintBucket, Shield, Bell, Network, HardDrive, KeyRound, Check } from 'lucide-react';
 

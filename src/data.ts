@@ -11,6 +11,14 @@ export const CURRENT_USER: User = {
   username: '@neo_voyager',
   displayName: savedProfile?.displayName || 'Neo Voyager',
   avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Neo&backgroundColor=0A0A0B',
+  avatarConfig: savedProfile?.avatarConfig || {
+    skinColor: '#ffdbb4',
+    hairStyle: 'bacon',
+    hairColor: '#090806',
+    clothingStyle: 'basic',
+    clothingColor: '#111111',
+    accessory: 'none'
+  },
   bio: savedProfile?.bio || 'Explorando a fronteira digital. Desenvolvedor full-stack.',
   followers: 1337,
   following: 42,

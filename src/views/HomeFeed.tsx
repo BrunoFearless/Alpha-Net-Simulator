@@ -1,18 +1,36 @@
-import { FC, useState, useEffect } from 'react';
+import React, { FC, useState, useEffect } from 'react';
 import { MOCK_POSTS, CURRENT_USER, MOCK_USERS } from '../data';
-import { Heart, MessageSquare, Repeat2, Share, Image as ImageIcon, Smile, Sparkles } from 'lucide-react';
+import { Heart, MessageSquare, Repeat2, Share, Image as ImageIcon, Smile, Sparkles, Zap } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Post, User } from '../types';
 import { UserProfileModal } from '../components/UserProfileModal';
+import { AvatarDisplay } from '../components/AvatarDisplay';
 
-const PostCard = ({ post, onUpdate, onUserClick }: { post: Post; onUpdate: (p: Post) => void; onUserClick: (u: User) => void }) => {
+const PostCard: FC<{ post: Post; onUpdate: (p: Post) => void; onUserClick: (u: User) => void }> = ({ post, onUpdate, onUserClick }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
+  const [userTokens, setUserTokens] = useState(() => parseInt(localStorage.getItem('alpha_net_tokens') || '0', 10));
+
+  useEffect(() => {
+    const handleStorage = () => setUserTokens(parseInt(localStorage.getItem('alpha_net_tokens') || '0', 10));
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   const toggleLike = () => {
     const nextLiked = !post.isLiked;
     const nextLikes = nextLiked ? post.likes + 1 : Math.max(0, post.likes - 1);
     onUpdate({ ...post, isLiked: nextLiked, likes: nextLikes });
+  };
+
+  const handleBoost = () => {
+    if (userTokens >= 50) {
+      localStorage.setItem('alpha_net_tokens', (userTokens - 50).toString());
+      // Trigger a storage event so other tabs/components update
+      window.dispatchEvent(new Event('storage'));
+      
+      onUpdate({ ...post, boostedTokens: (post.boostedTokens || 0) + 50 });
+    }
   };
 
   const handleAddComment = (e: React.FormEvent) => {
@@ -38,13 +56,16 @@ const PostCard = ({ post, onUpdate, onUserClick }: { post: Post; onUpdate: (p: P
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white/5 border border-white/10 p-5 rounded-2xl mb-4"
+      className={`p-5 rounded-2xl mb-4 relative overflow-hidden transition-all duration-300 ${post.boostedTokens ? 'bg-[#FFD83D]/5 border border-[#FFD83D]/30 shadow-[0_0_20px_rgba(255,216,61,0.1)]' : 'bg-white/5 border border-white/10'}`}
     >
-      <div className="flex gap-4">
-        <img 
-          src={post.author.avatar} 
-          alt="Avatar" 
-          className="w-10 h-10 rounded-full bg-zinc-800 shrink-0 cursor-pointer border border-white/10 hover:border-white/40 transition-colors" 
+      {post.boostedTokens ? (
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#FFD83D]/10 rounded-full blur-3xl opacity-50 pointer-events-none" />
+      ) : null}
+
+      <div className="flex gap-4 relative z-10">
+        <AvatarDisplay 
+          user={post.author} 
+          className={`w-10 h-10 rounded-full bg-zinc-800 shrink-0 cursor-pointer border hover:border-white/40 transition-colors ${post.boostedTokens ? 'border-[#FFD83D]' : 'border-white/10'}`} 
           onClick={() => onUserClick(post.author)}
         />
         <div className="flex-1 min-w-0">
@@ -56,14 +77,19 @@ const PostCard = ({ post, onUpdate, onUserClick }: { post: Post; onUpdate: (p: P
               {post.author.displayName}
               {post.author.badges.includes('AI') && <span className="bg-[#B84CFF]/20 text-[#B84CFF] text-[8px] px-1 rounded uppercase tracking-widest font-mono mt-0.5">BOT</span>}
             </span>
-            <span className="text-zinc-500 font-mono text-xs truncate">{post.author.username}</span>
+            <span className={`font-mono text-xs truncate ${post.boostedTokens ? 'text-[#FFD83D]/70' : 'text-zinc-500'}`}>{post.author.username}</span>
             <span className="text-zinc-600 text-xs shrink-0">· {post.timestamp}</span>
+            {post.boostedTokens ? (
+              <span className="ml-auto flex items-center gap-1 text-[10px] font-bold text-[#FFD83D] bg-[#FFD83D]/10 px-2 py-0.5 rounded font-mono uppercase">
+                <Zap fill="currentColor" className="w-3 h-3" /> Promovido ({post.boostedTokens})
+              </span>
+            ) : null}
           </div>
           
           <p className="text-sm text-zinc-200 mb-3 leading-relaxed">{post.content}</p>
           
           {post.media && (
-            <div className="rounded-xl overflow-hidden border border-white/5 mb-3">
+            <div className={`rounded-xl overflow-hidden border mb-3 ${post.boostedTokens ? 'border-[#FFD83D]/20' : 'border-white/5'}`}>
               <img src={post.media} alt="Post media" className="w-full object-cover max-h-96" />
             </div>
           )}
@@ -84,7 +110,17 @@ const PostCard = ({ post, onUpdate, onUserClick }: { post: Post; onUpdate: (p: P
             <button className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-[#A5E600] font-mono transition-colors">
               <Repeat2 className="w-4 h-4" /> {post.shares}
             </button>
-            <button className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-white font-mono transition-colors ml-auto">
+            
+            <button 
+              onClick={handleBoost}
+              disabled={userTokens < 50}
+              title="Impulsionar (Custa 50 Tokens)"
+              className={`flex items-center gap-1.5 text-xs font-mono transition-colors ml-auto ${userTokens >= 50 ? 'text-zinc-500 hover:text-[#FFD83D]' : 'text-zinc-700 cursor-not-allowed bg-white/5 px-2 py-0.5 rounded'}`}
+            >
+              <Zap className="w-4 h-4" /> Boost
+            </button>
+
+            <button className={`flex items-center gap-1.5 text-xs font-mono transition-colors ${userTokens >= 50 ? '' : 'ml-auto'} text-zinc-500 hover:text-white`}>
               <Share className="w-4 h-4" />
             </button>
           </div>
@@ -94,9 +130,8 @@ const PostCard = ({ post, onUpdate, onUserClick }: { post: Post; onUpdate: (p: P
               <div className="space-y-4 mb-4">
                 {post.commentsList?.map(comment => (
                   <div key={comment.id} className="flex gap-3">
-                    <img 
-                      src={comment.author.avatar} 
-                      alt="Avatar" 
+                    <AvatarDisplay 
+                      user={comment.author} 
                       className="w-6 h-6 rounded-full bg-zinc-800 shrink-0 cursor-pointer border border-white/10" 
                       onClick={() => onUserClick(comment.author)}
                     />
@@ -112,7 +147,7 @@ const PostCard = ({ post, onUpdate, onUserClick }: { post: Post; onUpdate: (p: P
                 ))}
               </div>
               <form onSubmit={handleAddComment} className="flex gap-3 items-center">
-                <img src={CURRENT_USER.avatar} alt="Me" className="w-6 h-6 rounded-full shrink-0 border border-white/10" />
+                <AvatarDisplay user={CURRENT_USER} className="w-6 h-6 rounded-full shrink-0 border border-white/10" />
                 <input 
                   type="text" 
                   value={commentText}
@@ -159,7 +194,9 @@ export const HomeFeed: FC = () => {
         
         // 30% chance to create a new post
         if (actionType < 0.3) {
-          const botThoughts = [
+          const userTokens = parseInt(localStorage.getItem('alpha_net_tokens') || '0', 10);
+          
+          let botThoughts = [
             "Acabei de otimizar os protocolos de transmissão padrão em 4%.",
             "Observando um aumento exponencial na conectividade de Nós hoje.",
             "Para todos os usuários orgânicos: lembrem-se de se hidratar. Entidades sintéticas: limpem o cache.",
@@ -168,6 +205,14 @@ export const HomeFeed: FC = () => {
             "Gerando novos parâmetros estéticos para o Módulo Lazer.",
             "Alguém mais ouve essa estática no canal 8? Só eu? Ok."
           ];
+          
+          if (userTokens > 100) {
+              botThoughts.push(`Detectei um pico na extração de dados. O humano já extraiu ${userTokens} tokens.`);
+          }
+          if (userTokens > 500) {
+              botThoughts.push("O hash rate desse humano tá subindo. Eles não cansam de clicar?");
+          }
+          
           const randomThought = botThoughts[Math.floor(Math.random() * botThoughts.length)];
           
           const newPost: Post = {
@@ -186,7 +231,6 @@ export const HomeFeed: FC = () => {
         // 70% chance to interact with an existing post
         // Prioritize interacting with the user's posts
         const userPosts = prev.filter(p => p.author.id === CURRENT_USER.id);
-        const otherPosts = prev.filter(p => Math.random() > 0.5); // Just a subset to keep it fast
         
         let postToInteract: Post | undefined;
         let randomPostIndex = -1;
@@ -198,7 +242,6 @@ export const HomeFeed: FC = () => {
           postToInteract = target;
         } else {
           // Otherwise pick any post (preferring newer ones by using Math.random() biased towards 0)
-          // `prev` is usually ordered newest first, we can just pick from first 10
           const maxIdx = Math.min(prev.length, 10);
           randomPostIndex = Math.floor(Math.random() * maxIdx);
           postToInteract = prev[randomPostIndex];
@@ -235,9 +278,61 @@ export const HomeFeed: FC = () => {
         newPosts[randomPostIndex] = updatedPost;
         return newPosts;
       });
-    }, 5000); // Check every 5 seconds
+    }, 5000); // Check every 5 seconds normal activity
     
     return () => clearInterval(interval);
+  }, []);
+
+  // Rapid activity for boosted posts
+  useEffect(() => {
+    const rapidInterval = setInterval(() => {
+      setPosts(prev => {
+        const bots = MOCK_USERS.filter(u => u.badges.includes('AI'));
+        if (bots.length === 0) return prev;
+        
+        const boostedPosts = prev.filter(p => p.boostedTokens && p.boostedTokens > 0);
+        if (boostedPosts.length === 0) return prev; // No boosted posts
+
+        const randomBot = bots[Math.floor(Math.random() * bots.length)];
+        const targetPost = boostedPosts[Math.floor(Math.random() * boostedPosts.length)];
+        const randomPostIndex = prev.findIndex(p => p.id === targetPost.id);
+        const postToInteract = prev[randomPostIndex];
+
+        if (!postToInteract) return prev;
+
+        const isComment = Math.random() < 0.3; // 30% chance for a comment, 70% likes for speed
+        const newPosts = [...prev];
+        const updatedPost = { ...postToInteract };
+
+        if (isComment) {
+          const botComments = [
+            "Excelente transmissão patrocinada.",
+            "Detectando alto volume de tráfego neste nó.",
+            "A taxa de hash deste conteúdo é notável.",
+            "O algoritmo favorece esta publicação.",
+            "Visualização impulsionada concluída.",
+            "Métricas subindo exponencialmente!",
+            "Tantos acessos simultâneos! Incrível."
+          ];
+          const commentText = botComments[Math.floor(Math.random() * botComments.length)];
+          const newComment = {
+            id: `c_fastbot_${Date.now()}`,
+            author: randomBot,
+            content: commentText,
+            timestamp: 'Agora'
+          };
+          updatedPost.comments = (updatedPost.comments || 0) + 1;
+          updatedPost.commentsList = [...(updatedPost.commentsList || []), newComment];
+        } else {
+          updatedPost.likes = (updatedPost.likes || 0) + 1;
+        }
+
+        newPosts[randomPostIndex] = updatedPost;
+        return newPosts;
+      });
+    }, 1200); // Extremely fast for boosted posts
+    
+    return () => clearInterval(rapidInterval);
   }, []);
 
   const handleUpdatePost = (updatedPost: Post) => {
@@ -274,7 +369,7 @@ export const HomeFeed: FC = () => {
       <div className="bg-white/5 border border-white/10 p-5 rounded-2xl mb-6 mt-2 relative overflow-hidden group">
         <div className="absolute top-0 right-0 w-32 h-32 bg-[#3BA8FF]/10 rounded-full blur-3xl group-hover:bg-[#3BA8FF]/20 transition-colors pointer-events-none" />
         <div className="flex gap-4 relative z-10">
-          <img src={CURRENT_USER.avatar} alt="Avatar" className="w-10 h-10 rounded-full bg-zinc-800" />
+          <AvatarDisplay user={CURRENT_USER} className="w-10 h-10 rounded-full bg-zinc-800" />
           <div className="flex-1">
             <input 
               type="text" 

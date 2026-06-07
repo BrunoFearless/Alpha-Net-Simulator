@@ -1,8 +1,18 @@
+export interface AvatarConfig {
+  skinColor: string;
+  hairStyle: string;
+  hairColor: string;
+  clothingStyle: string;
+  clothingColor: string;
+  accessory: string;
+}
+
 export interface User {
   id: string;
   username: string;
   displayName: string;
   avatar: string;
+  avatarConfig?: AvatarConfig;
   bio: string;
   followers: number;
   following: number;
@@ -27,6 +37,7 @@ export interface Post {
   commentsList?: PostComment[];
   shares: number;
   isLiked?: boolean;
+  boostedTokens?: number;
 }
 
 export interface Community {

@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { Home, Users, LayoutGrid, User, Bell, MessageSquare, Settings } from 'lucide-react';
+import { Home, Users, LayoutGrid, User, Bell, MessageSquare, Settings, Terminal, Target } from 'lucide-react';
 import { Logo } from './Logo';
 
 interface SidebarProps {
@@ -9,16 +9,19 @@ interface SidebarProps {
 
 export const Sidebar: FC<SidebarProps> = ({ currentView, onChangeView }) => {
   const navItems = [
-    { id: 'feed', label: 'Home Feed', icon: Home },
-    { id: 'communities', label: 'Communities', icon: Users },
-    { id: 'modules', label: 'Module Hub', icon: LayoutGrid },
-    { id: 'profile', label: 'Profile', icon: User },
+    { id: 'feed', label: 'Feed Central', icon: Home },
+    { id: 'communities', label: 'Nós de Rede', icon: Users },
+    { id: 'modules', label: 'Módulos', icon: LayoutGrid },
+    { id: 'mining', label: 'Mineração de Fichas', icon: Terminal }, 
+    { id: 'missions', label: 'Diretivas (IA)', icon: Target },
+    { id: 'avatar', label: 'Estúdio de Avatar', icon: User },
+    { id: 'profile', label: 'Meu Perfil', icon: User },
   ];
 
   const bottomItems = [
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'messages', label: 'Messages', icon: MessageSquare },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'notifications', label: 'Alertas', icon: Bell },
+    { id: 'messages', label: 'Comunicações', icon: MessageSquare },
+    { id: 'settings', label: 'Configurações', icon: Settings },
   ];
 
   return (

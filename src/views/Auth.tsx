@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import React, { FC, useState } from 'react';
 import { motion } from 'motion/react';
 import { Fingerprint, ArrowRight, Loader2 } from 'lucide-react';
 

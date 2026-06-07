@@ -2,6 +2,7 @@ import { FC } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User } from '../types';
 import { MapPin, Link2, Award, X, MessageSquare, Users } from 'lucide-react';
+import { AvatarDisplay } from './AvatarDisplay';
 
 interface UserProfileModalProps {
   user: User | null;
@@ -43,7 +44,7 @@ export const UserProfileModal: FC<UserProfileModalProps> = ({ user, onClose }) =
                <div className="flex justify-between items-end -mt-10 mb-4">
                  <div className="relative">
                    <div className="absolute inset-0 bg-[#A5E600] rounded-full blur-xl opacity-20 pointer-events-none" />
-                   <img src={user.avatar} alt="Avatar" className="w-20 h-20 rounded-2xl bg-zinc-950 border-4 border-[#050505] relative z-10" />
+                   <AvatarDisplay user={user} className="w-20 h-20 rounded-2xl bg-zinc-950 border-4 border-[#050505] relative z-10" />
                    <div className="absolute bottom-1 right-1 w-3 h-3 bg-[#A5E600] border-2 border-[#050505] rounded-full z-20" />
                  </div>
                  
