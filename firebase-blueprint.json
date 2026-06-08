@@ -1,0 +1,130 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Information about a simulated or real network user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique user ID" },
+        "username": { "type": "string", "description": "Network unique handle" },
+        "displayName": { "type": "string", "description": "Display name of the user" },
+        "avatar": { "type": "string", "description": "URL of the avatar svg" },
+        "bio": { "type": "string", "description": "Short description of the node" },
+        "followers": { "type": "integer", "description": "Count of follower nodes" },
+        "following": { "type": "integer", "description": "Count of following nodes" },
+        "badges": { "type": "array", "description": "List of active operational badges" },
+        "tokens": { "type": "integer", "description": "Current Alpha Tokens balance" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Profile registration timestamp" }
+      },
+      "required": ["id", "username", "displayName", "avatar", "bio", "followers", "following", "badges", "tokens"]
+    },
+    "Post": {
+      "title": "Network Post",
+      "description": "A broadcast on the central feed",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "authorId": { "type": "string" },
+        "author": { "type": "object" },
+        "content": { "type": "string" },
+        "media": { "type": "string" },
+        "likes": { "type": "integer" },
+        "comments": { "type": "integer" },
+        "shares": { "type": "integer" },
+        "boostedTokens": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "authorId", "author", "content", "likes", "comments", "shares", "createdAt"]
+    },
+    "Comment": {
+      "title": "Post Comment",
+      "description": "A sub-channel reply comment",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "postId": { "type": "string" },
+        "authorId": { "type": "string" },
+        "author": { "type": "object" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "postId", "authorId", "author", "content", "createdAt"]
+    },
+    "Message": {
+      "title": "Direct Message",
+      "description": "Encrypted direct communication",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "senderId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "senderId", "receiverId", "content", "createdAt"]
+    },
+    "Gift": {
+      "title": "Token Gift",
+      "description": "Direct gift transaction of tokens or items",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "receiverName": { "type": "string" },
+        "amount": { "type": "integer" },
+        "giftType": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "senderId", "senderName", "receiverId", "receiverName", "amount", "giftType", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System or user interaction alert",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "content": { "type": "string" },
+        "relatedId": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "type", "senderId", "senderName", "content", "read", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profile document registered by unique uid"
+    },
+    "posts/{postId}": {
+      "schema": "Post",
+      "description": "Feed broadcast post"
+    },
+    "posts/{postId}/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Broadcasting replies"
+    },
+    "posts/{postId}/likes/{userId}": {
+      "schema": "object",
+      "description": "Record of post likes to enforce idempotency"
+    },
+    "messages/{messageId}": {
+      "schema": "Message",
+      "description": "Direct chat transmissions"
+    },
+    "gifts/{giftId}": {
+      "schema": "Gift",
+      "description": "Direct network gifts of tokens or packets"
+    },
+    "notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "User specific dynamic alerts"
+    }
+  }
+}

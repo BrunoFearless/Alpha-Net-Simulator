@@ -21,11 +21,12 @@ const SHOP_ITEMS = {
   hairStyle: [
     { id: 'none', label: 'Careca', cost: 0 },
     { id: 'bacon', label: 'Cabelo Bacon', cost: 0 },
-    { id: 'block_spiky', label: 'Espetado de Blocos', cost: 2000 },
-    { id: 'block_short', label: 'Quadrado Curto', cost: 3000 },
-    { id: 'block_messy', label: 'Bagunçado Cúbico', cost: 4000 },
-    { id: 'block_fade', label: 'Fade Blocky', cost: 5000 },
-    { id: 'block_long', label: 'Longo Voxel', cost: 8000 },
+    { id: 'chestnut', label: 'Castanho Clássico', cost: 1500 },
+    { id: 'blue_hair', label: 'Messy Blue Hair', cost: 3000 },
+    { id: 'aesthetic_black', label: 'Aesthetic Preto', cost: 5000 },
+    { id: 'block_mohawk', label: 'Moicano do Bloco', cost: 8000 },
+    { id: 'fire_hair', label: 'Cabelo Flamejante', cost: 12000 },
+    { id: 'crystal_hair', label: 'Espetado de Cristal', cost: 15000 },
   ],
   hairColor: [
     { id: '#090806', label: 'Preto', cost: 0 },
@@ -41,6 +42,12 @@ const SHOP_ITEMS = {
     { id: 'basic', label: 'Camiseta Básica', cost: 0 },
     { id: 'jacket', label: 'Jaqueta Urbana', cost: 2000 },
     { id: 'hoodie', label: 'Moletom Hacker', cost: 4000 },
+    { id: 'police', label: 'Uniforme Policial', cost: 6000 },
+    { id: 'hoodie_neon', label: 'Corta-Vento Neon', cost: 8000 },
+    { id: 'suit', label: 'Terno de Gala', cost: 8500 },
+    { id: 'ninja', label: 'Traje Furtivo', cost: 11000 },
+    { id: 'streetwear', label: 'Kimono Cyberpunk', cost: 12000 },
+    { id: 'knight', label: 'Armadura Medieval', cost: 15000 },
   ],
   clothingColor: [
     { id: '#111111', label: 'Escuro', cost: 0 },
@@ -52,13 +59,13 @@ const SHOP_ITEMS = {
   ],
   accessory: [
     { id: 'none', label: 'Sem Acessório', cost: 0 },
-    { id: 'glasses', label: 'Óculos Nerd', cost: 1500 },
-    { id: 'mask', label: 'Máscara Filtro', cost: 3000 },
-    { id: 'headset', label: 'Headset Comms', cost: 4500 },
-    { id: 'visor', label: 'Visor Holográfico', cost: 8000 },
-    { id: 'catears', label: 'Orelhas Neko', cost: 12000 },
-    { id: 'cybereye', label: 'Implante Ocular', cost: 15000 },
-    { id: 'tiara', label: 'Coroa Imperial', cost: 25000 },
+    { id: 'aviator_shades', label: 'Óculos Aviador Pro', cost: 2000 },
+    { id: 'tophat', label: 'Cartola Clássica', cost: 3000 },
+    { id: 'headphones', label: 'Fones Ouvido Pro', cost: 4500 },
+    { id: 'ninja_mask', label: 'Capuz Furtivo', cost: 6000 },
+    { id: 'valk_horns', label: 'Asas de Valquíria', cost: 12000 },
+    { id: 'block_crown', label: 'Coroa de Ouro', cost: 20000 },
+    { id: 'halo', label: 'Halo de Luz', cost: 25000 },
   ]
 };
 

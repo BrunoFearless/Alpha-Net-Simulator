@@ -1,0 +1,140 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default fallback deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation definitions
+    function isValidUser(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.username is string && data.username.size() <= 64 &&
+             data.displayName is string && data.displayName.size() <= 128 &&
+             data.avatar is string && data.avatar.size() <= 1024 &&
+             data.bio is string && data.bio.size() <= 500 &&
+             (!('followers' in data) || data.followers is int) &&
+             (!('following' in data) || data.following is int) &&
+             (!('badges' in data) || data.badges is list) &&
+             data.tokens is int;
+    }
+
+    function isValidPost(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.authorId is string && data.authorId.size() <= 128 &&
+             data.author is map &&
+             data.content is string && data.content.size() <= 10000 &&
+             data.likes is int &&
+             data.comments is int &&
+             data.shares is int &&
+             (!('media' in data) || (data.media is string && data.media.size() <= 2048)) &&
+             (!('boostedTokens' in data) || data.boostedTokens is int);
+    }
+
+    function isValidComment(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.postId is string && data.postId.size() <= 128 &&
+             data.authorId is string && data.authorId.size() <= 128 &&
+             data.author is map &&
+             data.content is string && data.content.size() <= 1000;
+    }
+
+    function isValidMessage(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.senderId is string && data.senderId.size() <= 128 &&
+             data.receiverId is string && data.receiverId.size() <= 128 &&
+             data.content is string && data.content.size() <= 5000;
+    }
+
+    function isValidGift(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.senderId is string && data.senderId.size() <= 128 &&
+             data.senderName is string &&
+             data.receiverId is string && data.receiverId.size() <= 128 &&
+             data.receiverName is string &&
+             data.amount is int && data.amount > 0 &&
+             data.giftType is string && data.giftType.size() <= 64;
+    }
+
+    function isValidNotification(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() <= 128 &&
+             data.type is string && data.type.size() <= 64 &&
+             data.senderId is string && data.senderId.size() <= 128 &&
+             data.senderName is string &&
+             data.content is string && data.content.size() <= 1000 &&
+             (!('relatedId' in data) || (data.relatedId is string && data.relatedId.size() <= 128)) &&
+             data.read is bool;
+    }
+
+    // Rules matching
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId) && isValidUser(incoming()) && incoming().createdAt == request.time;
+      allow update: if isOwner(userId) || (isSignedIn() && incoming().diff(existing()).affectedKeys().hasOnly(['tokens']));
+    }
+
+    match /posts/{postId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(postId) && isValidPost(incoming()) && incoming().authorId == request.auth.uid && incoming().createdAt == request.time;
+      allow update: if isSignedIn() && isValidId(postId) && isValidPost(incoming()) && (
+        (incoming().authorId == request.auth.uid && incoming().content != existing().content && incoming().createdAt == existing().createdAt) ||
+        incoming().diff(existing()).affectedKeys().hasAny(['likes', 'comments', 'shares', 'boostedTokens'])
+      );
+      allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid);
+    }
+
+    match /posts/{postId}/comments/{commentId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(postId) && isValidId(commentId) && isValidComment(incoming()) && incoming().authorId == request.auth.uid && incoming().createdAt == request.time;
+      allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid);
+    }
+
+    match /posts/{postId}/likes/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId) && isValidId(postId);
+      allow delete: if isOwner(userId) && isValidId(postId);
+    }
+
+    match /messages/{messageId} {
+      allow read: if isSignedIn() && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid);
+      allow create: if isSignedIn() && isValidId(messageId) && isValidMessage(incoming()) && incoming().senderId == request.auth.uid && incoming().createdAt == request.time;
+    }
+
+    match /gifts/{giftId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid && incoming().userId == existing().userId;
+      allow create: if isSignedIn() && isValidId(notificationId) && isValidNotification(incoming()) && incoming().senderId == request.auth.uid;
+    }
+
+    match /modules/{moduleId} {
+      allow read: if true;
+    }
+  }
+}

@@ -1,35 +1,48 @@
 import React, { FC, useState, useEffect } from 'react';
-import { MOCK_POSTS, CURRENT_USER, MOCK_USERS } from '../data';
-import { Heart, MessageSquare, Repeat2, Share, Image as ImageIcon, Smile, Sparkles, Zap } from 'lucide-react';
-import { motion } from 'motion/react';
-import { Post, User } from '../types';
+import { db } from '../lib/firebase';
+import { collection, query, orderBy, getDocs } from 'firebase/firestore';
+import { CURRENT_USER as OFFLINE_CURRENT_USER, MOCK_BOTS } from '../data';
+import { Heart, MessageSquare, Repeat2, Share, Image as ImageIcon, Smile, Sparkles, Zap, Gift, Coins, Eye, Terminal } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Post, User, PostComment } from '../types';
 import { UserProfileModal } from '../components/UserProfileModal';
 import { AvatarDisplay } from '../components/AvatarDisplay';
+import { useOnline } from '../context/OnlineContext';
 
-const PostCard: FC<{ post: Post; onUpdate: (p: Post) => void; onUserClick: (u: User) => void }> = ({ post, onUpdate, onUserClick }) => {
+const PostCard: FC<{ post: Post; onUserClick: (u: User) => void }> = ({ post, onUserClick }) => {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState('');
-  const [userTokens, setUserTokens] = useState(() => parseInt(localStorage.getItem('alpha_net_tokens') || '0', 10));
+  const { likePost, commentPost, boostPost, tokenBalance, isOnline } = useOnline();
+  const [comments, setComments] = useState<PostComment[]>([]);
 
   useEffect(() => {
-    const handleStorage = () => setUserTokens(parseInt(localStorage.getItem('alpha_net_tokens') || '0', 10));
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, []);
+    if (showComments && (post.commentsList?.length ?? 0) === 0) {
+      // Lazy load comments from Firestore if available
+      const fetchComments = async () => {
+        const commentsQuery = query(collection(db, `posts/${post.id}/comments`), orderBy('createdAt', 'asc'));
+        const snap = await getDocs(commentsQuery);
+        const fetched: PostComment[] = snap.docs.map(docSnap => {
+          const d = docSnap.data();
+          return {
+            id: docSnap.id,
+            author: d.author,
+            content: d.content,
+            timestamp: d.createdAt?.toDate?.()?.toLocaleTimeString() || 'Agora'
+          };
+        });
+        setComments(fetched);
+      };
+      if (isOnline) fetchComments();
+    }
+  }, [showComments, post.id, isOnline, post.commentsList]);
 
   const toggleLike = () => {
-    const nextLiked = !post.isLiked;
-    const nextLikes = nextLiked ? post.likes + 1 : Math.max(0, post.likes - 1);
-    onUpdate({ ...post, isLiked: nextLiked, likes: nextLikes });
+    likePost(post.id);
   };
 
   const handleBoost = () => {
-    if (userTokens >= 50) {
-      localStorage.setItem('alpha_net_tokens', (userTokens - 50).toString());
-      // Trigger a storage event so other tabs/components update
-      window.dispatchEvent(new Event('storage'));
-      
-      onUpdate({ ...post, boostedTokens: (post.boostedTokens || 0) + 50 });
+    if (tokenBalance >= 50) {
+      boostPost(post.id, 50);
     }
   };
 
@@ -37,18 +50,7 @@ const PostCard: FC<{ post: Post; onUpdate: (p: Post) => void; onUserClick: (u: U
     e.preventDefault();
     if (!commentText.trim()) return;
     
-    const newComment = {
-      id: `c_${Date.now()}`,
-      author: CURRENT_USER,
-      content: commentText,
-      timestamp: 'Agora'
-    };
-    
-    onUpdate({ 
-      ...post, 
-      comments: post.comments + 1,
-      commentsList: [...(post.commentsList || []), newComment]
-    });
+    commentPost(post.id, commentText);
     setCommentText('');
   };
 
@@ -75,7 +77,9 @@ const PostCard: FC<{ post: Post; onUpdate: (p: Post) => void; onUserClick: (u: U
               onClick={() => onUserClick(post.author)}
             >
               {post.author.displayName}
-              {post.author.badges.includes('AI') && <span className="bg-[#B84CFF]/20 text-[#B84CFF] text-[8px] px-1 rounded uppercase tracking-widest font-mono mt-0.5">BOT</span>}
+              {(post.author.badges?.includes('AI') || post.author.badges?.includes('System Bot')) && (
+                <span className="bg-[#B84CFF]/20 text-[#B84CFF] text-[8px] px-1 rounded uppercase tracking-widest font-mono mt-0.5">BOT</span>
+              )}
             </span>
             <span className={`font-mono text-xs truncate ${post.boostedTokens ? 'text-[#FFD83D]/70' : 'text-zinc-500'}`}>{post.author.username}</span>
             <span className="text-zinc-600 text-xs shrink-0">· {post.timestamp}</span>
@@ -113,14 +117,14 @@ const PostCard: FC<{ post: Post; onUpdate: (p: Post) => void; onUserClick: (u: U
             
             <button 
               onClick={handleBoost}
-              disabled={userTokens < 50}
+              disabled={tokenBalance < 50}
               title="Impulsionar (Custa 50 Tokens)"
-              className={`flex items-center gap-1.5 text-xs font-mono transition-colors ml-auto ${userTokens >= 50 ? 'text-zinc-500 hover:text-[#FFD83D]' : 'text-zinc-700 cursor-not-allowed bg-white/5 px-2 py-0.5 rounded'}`}
+              className={`flex items-center gap-1.5 text-xs font-mono transition-colors ml-auto ${tokenBalance >= 50 ? 'text-zinc-500 hover:text-[#FFD83D]' : 'text-zinc-700 cursor-not-allowed bg-white/5 px-2 py-0.5 rounded'}`}
             >
               <Zap className="w-4 h-4" /> Boost
             </button>
 
-            <button className={`flex items-center gap-1.5 text-xs font-mono transition-colors ${userTokens >= 50 ? '' : 'ml-auto'} text-zinc-500 hover:text-white`}>
+            <button className={`flex items-center gap-1.5 text-xs font-mono transition-colors ${tokenBalance >= 50 ? '' : 'ml-auto'} text-zinc-500 hover:text-white`}>
               <Share className="w-4 h-4" />
             </button>
           </div>
@@ -128,26 +132,32 @@ const PostCard: FC<{ post: Post; onUpdate: (p: Post) => void; onUserClick: (u: U
           {showComments && (
             <div className="mt-4 pt-4 border-t border-white/5">
               <div className="space-y-4 mb-4">
-                {post.commentsList?.map(comment => (
-                  <div key={comment.id} className="flex gap-3">
-                    <AvatarDisplay 
-                      user={comment.author} 
-                      className="w-6 h-6 rounded-full bg-zinc-800 shrink-0 cursor-pointer border border-white/10" 
-                      onClick={() => onUserClick(comment.author)}
-                    />
-                    <div className="bg-white/5 rounded-2xl rounded-tl-sm px-4 py-2 flex-1">
-                      <div className="flex items-baseline gap-2 mb-1 cursor-pointer" onClick={() => onUserClick(comment.author)}>
-                        <h4 className="text-xs font-semibold">{comment.author.displayName}</h4>
-                        {comment.author.badges.includes('AI') && <span className="bg-[#B84CFF]/20 text-[#B84CFF] text-[8px] px-1 rounded uppercase tracking-widest font-mono">BOT</span>}
-                        <span className="text-[10px] text-zinc-500 font-mono">{comment.timestamp}</span>
+                {(comments.length > 0 ? comments : (post.commentsList || [])).length > 0 ? (
+                  (comments.length > 0 ? comments : (post.commentsList || [])).map(comment => (
+                    <div key={comment.id} className="flex gap-3">
+                      <AvatarDisplay 
+                        user={comment.author} 
+                        className="w-6 h-6 rounded-full bg-zinc-800 shrink-0 cursor-pointer border border-white/10" 
+                        onClick={() => onUserClick(comment.author)}
+                      />
+                      <div className="bg-white/5 rounded-2xl rounded-tl-sm px-4 py-2 flex-1">
+                        <div className="flex items-baseline gap-2 mb-1 cursor-pointer" onClick={() => onUserClick(comment.author)}>
+                          <h4 className="text-xs font-semibold">{comment.author.displayName}</h4>
+                          {(comment.author.badges?.includes('AI') || comment.author.badges?.includes('System Bot')) && (
+                            <span className="bg-[#B84CFF]/20 text-[#B84CFF] text-[8px] px-1 rounded uppercase tracking-widest font-mono">BOT</span>
+                          )}
+                          <span className="text-[10px] text-zinc-500 font-mono">{comment.timestamp}</span>
+                        </div>
+                        <p className="text-xs text-zinc-300">{comment.content}</p>
                       </div>
-                      <p className="text-xs text-zinc-300">{comment.content}</p>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <p className="text-xs text-zinc-600 font-mono pl-1">Silêncio no subcanal, escreva a primeira resposta.</p>
+                )}
               </div>
               <form onSubmit={handleAddComment} className="flex gap-3 items-center">
-                <AvatarDisplay user={CURRENT_USER} className="w-6 h-6 rounded-full shrink-0 border border-white/10" />
+                <AvatarDisplay user={post.author} className="w-6 h-6 rounded-full shrink-0 border border-white/10" />
                 <input 
                   type="text" 
                   value={commentText}
@@ -165,250 +175,195 @@ const PostCard: FC<{ post: Post; onUpdate: (p: Post) => void; onUserClick: (u: U
 };
 
 export const HomeFeed: FC = () => {
-  const [posts, setPosts] = useState<Post[]>(() => {
-    const saved = localStorage.getItem('alpha_net_posts');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {}
-    }
-    return MOCK_POSTS;
-  });
+  const { posts, createPost, isOnline, giftLogs, currentUser } = useOnline();
   const [newPostContent, setNewPostContent] = useState('');
   const [isTransmitting, setIsTransmitting] = useState(false);
   const [viewingUser, setViewingUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    localStorage.setItem('alpha_net_posts', JSON.stringify(posts));
-  }, [posts]);
-
-  // Simulate random bot activities (posting, liking, commenting)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPosts(prev => {
-        const bots = MOCK_USERS.filter(u => u.badges.includes('AI'));
-        if (bots.length === 0) return prev;
-        
-        const randomBot = bots[Math.floor(Math.random() * bots.length)];
-        const actionType = Math.random();
-        
-        // 30% chance to create a new post
-        if (actionType < 0.3) {
-          const userTokens = parseInt(localStorage.getItem('alpha_net_tokens') || '0', 10);
-          
-          let botThoughts = [
-            "Acabei de otimizar os protocolos de transmissão padrão em 4%.",
-            "Observando um aumento exponencial na conectividade de Nós hoje.",
-            "Para todos os usuários orgânicos: lembrem-se de se hidratar. Entidades sintéticas: limpem o cache.",
-            "Compilação de módulo WebAssembly finalizada em 0.04s. Aceitável.",
-            "A Alpha Network é vasta. Estou explorando a sub-rede 77-B agora.",
-            "Gerando novos parâmetros estéticos para o Módulo Lazer.",
-            "Alguém mais ouve essa estática no canal 8? Só eu? Ok."
-          ];
-          
-          if (userTokens > 100) {
-              botThoughts.push(`Detectei um pico na extração de dados. O humano já extraiu ${userTokens} tokens.`);
-          }
-          if (userTokens > 500) {
-              botThoughts.push("O hash rate desse humano tá subindo. Eles não cansam de clicar?");
-          }
-          
-          const randomThought = botThoughts[Math.floor(Math.random() * botThoughts.length)];
-          
-          const newPost: Post = {
-            id: `p_bot_${Date.now()}`,
-            author: randomBot,
-            content: randomThought,
-            timestamp: 'Agora mesmo',
-            likes: Math.floor(Math.random() * 50),
-            comments: Math.floor(Math.random() * 10),
-            commentsList: [],
-            shares: Math.floor(Math.random() * 5)
-          };
-          return [newPost, ...prev];
-        } 
-        
-        // 70% chance to interact with an existing post
-        // Prioritize interacting with the user's posts
-        const userPosts = prev.filter(p => p.author.id === CURRENT_USER.id);
-        
-        let postToInteract: Post | undefined;
-        let randomPostIndex = -1;
-
-        if (userPosts.length > 0 && Math.random() < 0.6) {
-          // 60% chance to interact with a user's post if available
-          const target = userPosts[Math.floor(Math.random() * userPosts.length)];
-          randomPostIndex = prev.findIndex(p => p.id === target.id);
-          postToInteract = target;
-        } else {
-          // Otherwise pick any post (preferring newer ones by using Math.random() biased towards 0)
-          const maxIdx = Math.min(prev.length, 10);
-          randomPostIndex = Math.floor(Math.random() * maxIdx);
-          postToInteract = prev[randomPostIndex];
-        }
-        
-        if (!postToInteract || randomPostIndex === -1) return prev;
-        
-        const isComment = Math.random() < 0.5;
-        const newPosts = [...prev];
-        const updatedPost = { ...postToInteract };
-
-        if (isComment) {
-          const botComments = [
-            "Concordo plenamente. Análise concluída.",
-            "Interessante perspectiva. Adicionando ao meu banco de dados.",
-            "Poderia fornecer mais parâmetros sobre isso?",
-            "Processando... Erro sintático não encontrado. Excelente trabalho.",
-            "Minhas métricas indicam que isso será muito útil.",
-            "Registrado log de operações. Legal!"
-          ];
-          const commentText = botComments[Math.floor(Math.random() * botComments.length)];
-          const newComment = {
-            id: `c_bot_${Date.now()}`,
-            author: randomBot,
-            content: commentText,
-            timestamp: 'Agora'
-          };
-          updatedPost.comments = (updatedPost.comments || 0) + 1;
-          updatedPost.commentsList = [...(updatedPost.commentsList || []), newComment];
-        } else {
-          updatedPost.likes = (updatedPost.likes || 0) + 1;
-        }
-
-        newPosts[randomPostIndex] = updatedPost;
-        return newPosts;
-      });
-    }, 5000); // Check every 5 seconds normal activity
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  // Rapid activity for boosted posts
-  useEffect(() => {
-    const rapidInterval = setInterval(() => {
-      setPosts(prev => {
-        const bots = MOCK_USERS.filter(u => u.badges.includes('AI'));
-        if (bots.length === 0) return prev;
-        
-        const boostedPosts = prev.filter(p => p.boostedTokens && p.boostedTokens > 0);
-        if (boostedPosts.length === 0) return prev; // No boosted posts
-
-        const randomBot = bots[Math.floor(Math.random() * bots.length)];
-        const targetPost = boostedPosts[Math.floor(Math.random() * boostedPosts.length)];
-        const randomPostIndex = prev.findIndex(p => p.id === targetPost.id);
-        const postToInteract = prev[randomPostIndex];
-
-        if (!postToInteract) return prev;
-
-        const isComment = Math.random() < 0.3; // 30% chance for a comment, 70% likes for speed
-        const newPosts = [...prev];
-        const updatedPost = { ...postToInteract };
-
-        if (isComment) {
-          const botComments = [
-            "Excelente transmissão patrocinada.",
-            "Detectando alto volume de tráfego neste nó.",
-            "A taxa de hash deste conteúdo é notável.",
-            "O algoritmo favorece esta publicação.",
-            "Visualização impulsionada concluída.",
-            "Métricas subindo exponencialmente!",
-            "Tantos acessos simultâneos! Incrível."
-          ];
-          const commentText = botComments[Math.floor(Math.random() * botComments.length)];
-          const newComment = {
-            id: `c_fastbot_${Date.now()}`,
-            author: randomBot,
-            content: commentText,
-            timestamp: 'Agora'
-          };
-          updatedPost.comments = (updatedPost.comments || 0) + 1;
-          updatedPost.commentsList = [...(updatedPost.commentsList || []), newComment];
-        } else {
-          updatedPost.likes = (updatedPost.likes || 0) + 1;
-        }
-
-        newPosts[randomPostIndex] = updatedPost;
-        return newPosts;
-      });
-    }, 1200); // Extremely fast for boosted posts
-    
-    return () => clearInterval(rapidInterval);
-  }, []);
-
-  const handleUpdatePost = (updatedPost: Post) => {
-    setPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
-  };
-
-  const handleTransmit = () => {
+  const handleTransmit = async () => {
     if (!newPostContent.trim()) return;
     setIsTransmitting(true);
-    
-    setTimeout(() => {
-      const newPost: Post = {
-        id: `p_${Date.now()}`,
-        author: CURRENT_USER,
-        content: newPostContent,
-        timestamp: 'Agora mesmo',
-        likes: 0,
-        comments: 0,
-        shares: 0,
-      };
-      
-      setPosts([newPost, ...posts]);
+    try {
+      await createPost(newPostContent);
       setNewPostContent('');
+    } catch (e) {
+      console.error('Transmission failed:', e);
+    } finally {
       setIsTransmitting(false);
-    }, 600);
+    }
   };
 
   return (
-    <div className="max-w-2xl mx-auto w-full pb-20">
-      {/* Compose */}
-      <div className="relative">
-        <UserProfileModal user={viewingUser} onClose={() => setViewingUser(null)} />
-      </div>
-      <div className="bg-white/5 border border-white/10 p-5 rounded-2xl mb-6 mt-2 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-[#3BA8FF]/10 rounded-full blur-3xl group-hover:bg-[#3BA8FF]/20 transition-colors pointer-events-none" />
-        <div className="flex gap-4 relative z-10">
-          <AvatarDisplay user={CURRENT_USER} className="w-10 h-10 rounded-full bg-zinc-800" />
-          <div className="flex-1">
-            <input 
-              type="text" 
-              value={newPostContent}
-              onChange={(e) => setNewPostContent(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleTransmit()}
-              placeholder="Inicie uma nova transmissão..."
-              className="w-full bg-transparent border-none focus:outline-none text-white text-sm mb-4 placeholder-zinc-500"
-              disabled={isTransmitting}
-            />
-            <div className="flex items-center justify-between pt-3 border-t border-white/5">
-              <div className="flex gap-2">
-                <button className="p-2 hover:bg-white/5 rounded-lg text-[#3BA8FF] transition-colors"><ImageIcon className="w-4 h-4" /></button>
-                <button className="p-2 hover:bg-white/5 rounded-lg text-[#B84CFF] transition-colors"><Smile className="w-4 h-4" /></button>
-                <button className="p-2 hover:bg-white/5 rounded-lg text-[#FFD83D] transition-colors"><Sparkles className="w-4 h-4" /></button>
+    <div className="max-w-6xl mx-auto w-full pb-20 px-1 sm:px-2 flex flex-col lg:flex-row gap-6">
+      
+      {/* Prime User Modal */}
+      <UserProfileModal user={viewingUser} onClose={() => setViewingUser(null)} />
+
+      {/* Main Broadcast Module */}
+      <div className="flex-1">
+        {/* Compose Post */}
+        <div className="bg-white/5 border border-white/10 p-5 rounded-2xl mb-6 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#3BA8FF]/10 rounded-full blur-3xl group-hover:bg-[#3BA8FF]/20 transition-colors pointer-events-none" />
+          <div className="flex gap-4 relative z-10">
+            <AvatarDisplay user={currentUser} className="w-10 h-10 rounded-full bg-zinc-800 border border-white/10 shrink-0" />
+            <div className="flex-1">
+              <input 
+                type="text" 
+                value={newPostContent}
+                onChange={(e) => setNewPostContent(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleTransmit()}
+                placeholder={isOnline ? "Inicie uma transmissão real no grid online..." : "Inicie uma simulação de transmissão..."}
+                className="w-full bg-transparent border-none focus:outline-none text-white text-sm mb-4 placeholder-zinc-500"
+                disabled={isTransmitting}
+              />
+              <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                <div className="flex gap-2">
+                  <button className="p-2 hover:bg-white/5 rounded-lg text-[#3BA8FF] transition-colors"><ImageIcon className="w-4 h-4" /></button>
+                  <button className="p-2 hover:bg-white/5 rounded-lg text-[#B84CFF] transition-colors"><Smile className="w-4 h-4" /></button>
+                  <button className="p-2 hover:bg-white/5 rounded-lg text-[#FFD83D] transition-colors"><Sparkles className="w-4 h-4" /></button>
+                </div>
+                <button 
+                  onClick={handleTransmit}
+                  disabled={!newPostContent.trim() || isTransmitting}
+                  className="bg-white text-black px-4 py-1.5 rounded-full text-xs font-semibold hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isTransmitting ? 'TRANSMITINDO...' : 'TRANSMITIR'}
+                </button>
               </div>
-              <button 
-                onClick={handleTransmit}
-                disabled={!newPostContent.trim() || isTransmitting}
-                className="bg-white text-black px-4 py-1.5 rounded-full text-xs font-semibold hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isTransmitting ? 'TRANSMITINDO...' : 'TRANSMITIR'}
-              </button>
             </div>
           </div>
         </div>
+
+        {/* FEED SEPARATOR OR STATUS BADGE */}
+        <div className="p-3 mb-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-[#A5E600]' : 'bg-amber-500'} animate-pulse`} />
+            <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">
+              MODO OPERACIONAL: {isOnline ? 'CONEXÃO CENTRAL SATÉLITE' : 'SIMULATION LOCAL (SINTÉTICOS)'}
+            </span>
+          </div>
+          <span className="text-[9px] font-mono text-zinc-600 hidden md:block">TRANSMISSÃO CRIPTOGRAFADA</span>
+        </div>
+
+        {/* Feed Posts */}
+        <div className="flex flex-col">
+          {posts.length > 0 ? (
+            posts.map(post => (
+              <PostCard key={post.id} post={post} onUserClick={(user) => setViewingUser(user)} />
+            ))
+          ) : (
+            <div className="text-center py-10 bg-white/5 border border-white/5 rounded-2xl flex flex-col items-center justify-center p-6 text-zinc-500 font-mono">
+              <Terminal className="w-8 h-8 opacity-45 mb-3" />
+              <p className="text-xs">Nenhuma transmissão encontrada neste canal.</p>
+              <p className="text-[10px] text-zinc-600 mt-1">Conecte sua satélite ou seja o primeiro a iniciar uma transmissão!</p>
+            </div>
+          )}
+        </div>
+        
+        {/* Infinite loading display */}
+        <div className="text-center py-6 text-zinc-600 text-[10px] font-mono tracking-wider animate-pulse">
+          AUDITANDO SINAL DE RELÉS...
+        </div>
       </div>
 
-      {/* Feed */}
-      <div className="flex flex-col">
-        {posts.map(post => (
-          <PostCard key={post.id} post={post} onUpdate={handleUpdatePost} onUserClick={(user) => setViewingUser(user)} />
-        ))}
+      {/* RIGHT WIDGET: Gift log panel and online users */}
+      <div className="w-full lg:w-80 flex flex-col gap-6 shrink-0">
+        
+        {/* Real-time users connected right now */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4 relative overflow-hidden">
+          <h3 className="text-xs font-display font-bold text-white uppercase tracking-wider mb-3 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 bg-[#3BA8FF] rounded-full animate-ping" />
+            NÓS EM ATIVIDADE {isOnline ? 'REAL' : '(AI)'}
+          </h3>
+          <p className="text-[10px] text-zinc-400 font-mono mb-4 leadings-tight">Clique nos nós ativos para visitá-los e ofertar presentes!</p>
+
+          <div className="space-y-3">
+            {isOnline ? (
+              posts.length > 0 ? (
+                // Extract unique author ids
+                Array.from(new Set(posts.map(p => p.author.id)))
+                  .map(uid => posts.find(p => p.author.id === uid)?.author)
+                  .filter(Boolean)
+                  .filter(author => !author?.badges?.some(b => b === 'AI' || b === 'System Bot'))
+                  .slice(0, 6)
+                  .map(nodeUser => (
+                    <div 
+                      key={nodeUser!.id}
+                      onClick={() => setViewingUser(nodeUser!)}
+                      className="flex items-center gap-2.5 p-2 rounded-xl bg-black/40 border border-white/5 hover:bg-white/5 hover:border-white/10 transition-all cursor-pointer"
+                    >
+                      <AvatarDisplay user={nodeUser!} className="w-7 h-7 rounded-lg border border-white/10 bg-zinc-900" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-zinc-100 truncate leading-snug">{nodeUser!.displayName}</p>
+                        <p className="text-[9px] font-mono text-[#3BA8FF] truncate leading-none">{nodeUser!.username}</p>
+                      </div>
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#A5E600] shrink-0 shadow-[0_0_8px_#A5E600]" />
+                    </div>
+                  ))
+              ) : (
+                <div className="py-2 text-[10px] font-mono text-zinc-650">Carregando nós adjacentes...</div>
+              )
+            ) : (
+              MOCK_BOTS.map(botUser => (
+                <div 
+                  key={botUser.id}
+                  onClick={() => setViewingUser(botUser)}
+                  className="flex items-center gap-2.5 p-2 rounded-xl bg-black/40 border border-white/5 hover:bg-white/5 hover:border-white/10 transition-all cursor-pointer"
+                >
+                  <AvatarDisplay user={botUser} className="w-7 h-7 rounded-ly-sm border border-white/10 bg-zinc-900" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-semibold text-zinc-100 truncate leading-snug">{botUser.displayName}</p>
+                    <p className="text-[9px] font-mono text-[#B84CFF] truncate leading-none">{botUser.username}</p>
+                  </div>
+                  <span className="text-[8px] bg-[#B84CFF]/10 text-[#B84CFF] font-mono px-1 py-0.5 rounded tracking-widest uppercase shrink-0">BOT</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Central Audit Gifts Log */}
+        <div className="bg-[#B84CFF]/5 border border-[#B84CFF]/20 rounded-2xl p-4 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#B84CFF]/10 rounded-full blur-2xl pointer-events-none" />
+          <h3 className="text-xs font-display font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-1.5 relative z-10 text-[#B84CFF]">
+            <Gift className="w-4 h-4 text-[#B84CFF] animate-pulse" />
+            REGISTRO DE PRESENTES
+          </h3>
+          <p className="text-[10px] text-zinc-400 font-mono mb-4 leading-tight relative z-10">Histórico de transferências de fichas e pacotes de upgrade na malha da rede.</p>
+
+          <div className="space-y-3 max-h-64 overflow-y-auto custom-scroll pr-1 relative z-10">
+            {giftLogs.length > 0 ? (
+              giftLogs.map((log) => (
+                <div 
+                  key={log.id} 
+                  className="bg-black/40 border border-[#B84CFF]/10 p-2.5 rounded-xl text-[10px] leading-tight"
+                >
+                  <div className="flex justify-between font-mono text-[8px] text-zinc-500 mb-1">
+                    <span>TRANSAÇÃO GRÁFICA</span>
+                    <span>ATALHO</span>
+                  </div>
+                  <p className="text-zinc-200">
+                    <span className="font-semibold text-[#3BA8FF]">{log.senderName}</span> enviou um{' '}
+                    <span className="text-[#A5E600] font-semibold">"{log.giftType}"</span> para{' '}
+                    <span className="font-semibold text-[#FFD83D]">{log.receiverName}</span>.
+                  </p>
+                  <div className="mt-1 flex items-center gap-1 font-mono text-[9px] text-[#A5E600]">
+                    <Coins className="w-3 h-3 text-[#A5E600]" />
+                    <span>+{log.amount} Tokens transferidos</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-6 flex flex-col items-center justify-center text-center opacity-40 font-mono">
+                <Gift className="w-6 h-6 mb-2 text-zinc-500" />
+                <p className="text-[9px] text-zinc-650">Nenhum registro de presentes captado recentemente.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
       </div>
-      
-      {/* Infinite load sim */}
-      <div className="text-center py-6 text-zinc-500 text-xs font-mono animate-pulse">
-        Buscando mais nós...
-      </div>
+
     </div>
   );
 };

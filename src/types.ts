@@ -13,9 +13,9 @@ export interface User {
   displayName: string;
   avatar: string;
   avatarConfig?: AvatarConfig;
-  bio: string;
-  followers: number;
-  following: number;
+  bio?: string;
+  followers?: number;
+  following?: number;
   badges: string[];
 }
 
@@ -47,4 +47,24 @@ export interface Community {
   members: number;
   themeColor: string;
   icon: string;
+}
+
+export interface AppNotification {
+  id: string;
+  userId: string;
+  type: 'message' | 'comment' | 'like' | 'follow' | 'system';
+  senderId?: string;
+  senderName?: string;
+  content: string;
+  relatedId?: string;
+  read: boolean;
+  createdAt: Date;
+}
+
+export interface Module {
+  id: string;
+  title: string;
+  color: string;
+  iconName: string;
+  desc: string;
 }

@@ -35,15 +35,15 @@ export const CommunitiesView: FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto w-full pb-20">
-      <div className="mb-8">
-        <h2 className="text-3xl font-display font-bold tracking-tight mb-2">COMMUNITIES</h2>
-        <p className="text-zinc-400 font-mono text-sm max-w-xl">
+    <div className="max-w-4xl mx-auto w-full pb-20 px-1 sm:px-2">
+      <div className="mb-6 sm:mb-8">
+        <h2 className="text-2xl sm:text-3xl font-display font-bold tracking-tight mb-2">COMMUNITIES</h2>
+        <p className="text-zinc-400 font-mono text-xs sm:text-sm max-w-xl">
           Discover decentralized hubs. Join nodes to synchronize data feeds and collaborate with other entities in the network.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {MOCK_COMMUNITIES.map((community, i) => {
           const Icon = ICON_MAP[community.icon] || Users;
           const isJoined = joinedNodes.has(community.id);
@@ -53,10 +53,10 @@ export const CommunitiesView: FC = () => {
               key={community.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0, transition: { delay: i * 0.1 } }}
-              className="bg-white/5 p-6 rounded-3xl relative overflow-hidden group hover:bg-white/10 transition-colors border border-white/5"
+              className="bg-white/5 p-5 sm:p-6 rounded-3xl relative overflow-hidden group hover:bg-white/10 transition-colors border border-white/5"
             >
               <div 
-                className="absolute top-0 right-0 w-32 h-32 blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity pointer-events-none" 
+                className="absolute top-0 right-0 w-28 sm:w-32 h-28 sm:h-32 blur-[50px] sm:blur-[60px] opacity-20 group-hover:opacity-40 transition-opacity pointer-events-none" 
                 style={{ backgroundColor: community.themeColor }} 
               />
               

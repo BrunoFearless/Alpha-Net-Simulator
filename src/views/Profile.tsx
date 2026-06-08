@@ -3,21 +3,22 @@ import { CURRENT_USER } from '../data';
 import { motion } from 'motion/react';
 import { Settings, MapPin, Link2, Grid, Award, Save, X, Eye, Cpu, Hexagon, Palette, Key, Crown, Rocket } from 'lucide-react';
 import { AvatarDisplay } from '../components/AvatarDisplay';
+import { useOnline } from '../context/OnlineContext';
 
 export const ProfileView: FC = () => {
+  const { currentUser, updateProfile } = useOnline();
   const [isEditing, setIsEditing] = useState(false);
-  const [profile, setProfile] = useState(() => {
-    const saved = localStorage.getItem('alpha_net_profile');
-    if (saved) {
-        try {
-            return JSON.parse(saved);
-        } catch(e) {}
-    }
-    return {
-      displayName: CURRENT_USER.displayName,
-      bio: CURRENT_USER.bio,
-    };
+  const [profile, setProfile] = useState({
+    displayName: currentUser.displayName,
+    bio: currentUser.bio,
   });
+
+  useEffect(() => {
+    setProfile({
+      displayName: currentUser.displayName,
+      bio: currentUser.bio,
+    });
+  }, [currentUser.displayName, currentUser.bio]);
 
   useEffect(() => {
     localStorage.setItem('alpha_net_profile', JSON.stringify(profile));
@@ -62,18 +63,21 @@ export const ProfileView: FC = () => {
       setPurchasedBadges(prev => [...prev, item.id]);
       
       // Update the global CURRENT_USER for this session
-      if (item.type === 'badge' && !CURRENT_USER.badges.includes(item.title)) {
-        CURRENT_USER.badges.push(item.title);
+      if (item.type === 'badge' && !currentUser.badges.includes(item.title)) {
+        currentUser.badges.push(item.title);
       }
     }
   };
 
-  const [tempProfile, setTempProfile] = useState({ ...profile });
+  const [tempProfile, setTempProfile] = useState({ displayName: profile.displayName, bio: profile.bio });
 
-  const handleSave = () => {
+  useEffect(() => {
+    setTempProfile({ displayName: profile.displayName, bio: profile.bio });
+  }, [profile]);
+
+  const handleSave = async () => {
     setProfile(tempProfile);
-    CURRENT_USER.displayName = tempProfile.displayName;
-    CURRENT_USER.bio = tempProfile.bio;
+    await updateProfile(tempProfile.displayName, tempProfile.bio);
     setIsEditing(false);
   };
 
@@ -127,17 +131,17 @@ export const ProfileView: FC = () => {
           <div className="flex justify-between items-end -mt-16 mb-4">
             <div className="relative">
               <div className="absolute inset-0 bg-[#A5E600] rounded-full blur-xl opacity-20 pointer-events-none" />
-              <AvatarDisplay user={CURRENT_USER} className="w-32 h-32 rounded-3xl bg-zinc-950 border-4 border-[#020202] relative z-10" />
+              <AvatarDisplay user={currentUser} className="w-32 h-32 rounded-3xl bg-zinc-950 border-4 border-[#020202] relative z-10" />
               <div className="absolute bottom-2 right-2 w-4 h-4 bg-[#A5E600] border-2 border-[#020202] rounded-full z-20" />
             </div>
             
             <div className="flex gap-4 pb-2">
               <div className="text-center px-4 py-2 bg-white/5 border border-white/10 rounded-2xl">
-                <p className="font-display font-bold text-xl">{CURRENT_USER.followers.toLocaleString()}</p>
+                <p className="font-display font-bold text-xl">{(currentUser.followers ?? 0).toLocaleString()}</p>
                 <p className="text-xs text-zinc-500 font-mono tracking-wider">SEGUIDORES</p>
               </div>
               <div className="text-center px-4 py-2 bg-white/5 border border-white/10 rounded-2xl">
-                <p className="font-display font-bold text-xl">{CURRENT_USER.following}</p>
+                <p className="font-display font-bold text-xl">{currentUser.following ?? 0}</p>
                 <p className="text-xs text-zinc-500 font-mono tracking-wider">SEGUINDO</p>
               </div>
             </div>
@@ -150,7 +154,7 @@ export const ProfileView: FC = () => {
                   {profile.displayName} 
                   <span className="text-xs px-2 py-0.5 bg-[#A5E600]/20 text-[#A5E600] rounded uppercase tracking-wider font-mono">Verificado</span>
                 </h1>
-                <p className="text-zinc-400 font-mono text-sm mt-1">{CURRENT_USER.username}</p>
+                <p className="text-zinc-400 font-mono text-sm mt-1">{currentUser.username}</p>
                 <p className="mt-4 text-zinc-200 leading-relaxed max-w-2xl">{profile.bio}</p>
               </>
             ) : (
@@ -186,7 +190,7 @@ export const ProfileView: FC = () => {
             </div>
 
             <div className="flex flex-wrap gap-2 mt-6">
-              {CURRENT_USER.badges.map((badge, i) => (
+              {currentUser.badges.map((badge, i) => (
                 <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-zinc-300 shadow-inner">
                   <Award className="w-3.5 h-3.5 text-[#FFD83D]" />
                   {badge}

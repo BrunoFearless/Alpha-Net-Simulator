@@ -90,98 +90,98 @@ export const DataMiningView: FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto w-full h-[calc(100vh-140px)] flex flex-col pt-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-display font-bold tracking-tight text-white flex items-center gap-3">
-          <Terminal className="w-8 h-8 text-[#A5E600]" />
+    <div className="max-w-4xl mx-auto w-full min-h-[calc(100vh-160px)] flex flex-col pt-4 pb-12 px-1 sm:px-2">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-white flex items-center gap-2 sm:gap-3">
+          <Terminal className="w-6 h-6 sm:w-8 sm:h-8 text-[#A5E600]" />
           Terminal de Mineração Alpha
         </h1>
-        <p className="text-zinc-400 font-mono mt-2 text-sm">
+        <p className="text-zinc-400 font-mono mt-1 sm:mt-2 text-xs sm:text-sm">
           Extraia fragmentos de dados e converta-os em Alpha Tokens. Melhore o processador para minerar no vazio.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
         {/* Clicker Area */}
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col items-center justify-center relative overflow-hidden group">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[#A5E600]/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="bg-white/5 border border-white/10 rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center relative overflow-hidden group min-h-[380px] sm:min-h-[440px]">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 sm:w-64 h-48 sm:h-64 bg-[#A5E600]/5 rounded-full blur-3xl pointer-events-none" />
           
-          <h2 className="text-xl font-mono text-zinc-300 mb-8 absolute top-8 text-center uppercase tracking-widest">
+          <h2 className="text-xs sm:text-sm font-mono text-zinc-400 mb-2 uppercase tracking-widest">
             Tokens Acumulados
           </h2>
           
-          <div className="text-7xl font-display font-bold text-white tracking-tighter mb-4 text-center">
+          <div className="text-5xl sm:text-7xl font-display font-bold text-white tracking-tighter mb-4 text-center">
             {tokens.toLocaleString()}
           </div>
           
-          <div className="text-sm font-mono text-[#A5E600] mb-12 bg-[#A5E600]/10 px-4 py-1.5 rounded-full border border-[#A5E600]/20 flex items-center gap-2">
-            <Zap className="w-4 h-4" /> {autoMineRate}/segundo
+          <div className="text-xs sm:text-sm font-mono text-[#A5E600] mb-8 bg-[#A5E600]/10 px-3.5 py-1.5 rounded-full border border-[#A5E600]/20 flex items-center gap-1.5">
+            <Zap className="w-3.5 h-3.5" /> {autoMineRate}/segundo
           </div>
 
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={handleMine}
-            className="w-48 h-48 rounded-full bg-gradient-to-br from-[#111] to-[#222] border-4 border-[#A5E600]/30 flex items-center justify-center shadow-[0_0_40px_rgba(165,230,0,0.15)] hover:shadow-[0_0_60px_rgba(165,230,0,0.3)] transition-shadow group-hover:border-[#A5E600]/60 relative z-10"
+            className="w-36 h-36 sm:w-48 sm:h-48 rounded-full bg-gradient-to-br from-[#111] to-[#222] border-4 border-[#A5E600]/30 flex items-center justify-center shadow-[0_0_30px_rgba(165,230,0,0.12)] hover:shadow-[0_0_50px_rgba(165,230,0,0.25)] transition-shadow group-hover:border-[#A5E600]/60 relative z-10"
           >
-            <div className="absolute inset-2 rounded-full border border-[#A5E600]/20 border-dashed animate-[spin_10s_linear_infinite]" />
-            <div className="absolute inset-6 rounded-full border border-white/5 border-dashed animate-[spin_15s_linear_infinite_reverse]" />
-            <Database className="w-16 h-16 text-[#A5E600]/80 group-hover:text-[#A5E600] transition-colors" />
+            <div className="absolute inset-1.5 rounded-full border border-[#A5E600]/20 border-dashed animate-[spin_10s_linear_infinite]" />
+            <div className="absolute inset-4 sm:inset-6 rounded-full border border-white/5 border-dashed animate-[spin_15s_linear_infinite_reverse]" />
+            <Database className="w-12 h-12 sm:w-16 sm:h-16 text-[#A5E600]/80 group-hover:text-[#A5E600] transition-colors" />
           </motion.button>
           
-          <p className="mt-8 text-zinc-500 font-mono text-sm">
+          <p className="mt-6 text-zinc-500 font-mono text-xs sm:text-sm">
             +{clickPower} por clique
           </p>
         </div>
 
         {/* Upgrades Area */}
         <div className="flex flex-col gap-4">
-          <h2 className="text-xl font-display font-bold text-white mb-2">Subsistemas Livres</h2>
+          <h2 className="text-lg sm:text-xl font-display font-bold text-white mb-1">Subsistemas Livres</h2>
           
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-colors flex items-center gap-4">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-5 hover:bg-white/10 transition-colors flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
             <div className="w-12 h-12 bg-black/40 rounded-xl border border-white/5 flex items-center justify-center shrink-0">
               <Cpu className="w-6 h-6 text-[#3BA8FF]" />
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-white">Processador Quântico</h3>
-              <p className="text-xs text-zinc-400 font-mono mt-1">Aumenta o ganho por clique (+1)</p>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-sm sm:text-base text-white truncate">Processador Quântico</h3>
+              <p className="text-[11px] sm:text-xs text-zinc-400 font-mono mt-0.5">Aumenta o ganho por clique (+1)</p>
             </div>
-            <div className="flex flex-col items-end gap-2 shrink-0">
-              <span className="text-[10px] uppercase font-mono text-zinc-500">{clickBuffs.length} Ativos (1m)</span>
+            <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 shrink-0 border-t border-white/5 sm:border-0 pt-3 sm:pt-0">
+              <span className="text-[9px] sm:text-[10px] uppercase font-mono text-zinc-500">{clickBuffs.length} Ativos (1m)</span>
               <button 
                 onClick={handleUpgradeClick}
                 disabled={tokens < upgradeCostClick}
-                className="px-4 py-2 bg-[#3BA8FF]/20 text-[#3BA8FF] hover:bg-[#3BA8FF]/30 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg text-xs font-bold font-mono transition-colors border border-[#3BA8FF]/30"
+                className="px-3.5 py-1.5 bg-[#3BA8FF]/20 text-[#3BA8FF] hover:bg-[#3BA8FF]/30 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg text-xs font-bold font-mono transition-colors border border-[#3BA8FF]/30 select-none"
               >
                 ATIVAR (-{upgradeCostClick})
               </button>
             </div>
           </div>
 
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-colors flex items-center gap-4">
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-5 hover:bg-white/10 transition-colors flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
             <div className="w-12 h-12 bg-black/40 rounded-xl border border-white/5 flex items-center justify-center shrink-0">
               <Server className="w-6 h-6 text-[#FFD83D]" />
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-white">Fazenda de Servidores</h3>
-              <p className="text-xs text-zinc-400 font-mono mt-1">Aumenta a mineração autônoma (+1/s)</p>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-sm sm:text-base text-white truncate">Fazenda de Servidores</h3>
+              <p className="text-[11px] sm:text-xs text-zinc-400 font-mono mt-0.5">Aumenta a mineração autônoma (+1/s)</p>
             </div>
-            <div className="flex flex-col items-end gap-2 shrink-0">
-               <span className="text-[10px] uppercase font-mono text-zinc-500">{autoBuffs.length} Ativos (1m)</span>
+            <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 shrink-0 border-t border-white/5 sm:border-0 pt-3 sm:pt-0">
+               <span className="text-[9px] sm:text-[10px] uppercase font-mono text-zinc-500">{autoBuffs.length} Ativos (1m)</span>
               <button 
                 onClick={handleUpgradeAuto}
                 disabled={tokens < upgradeCostAuto}
-                className="px-4 py-2 bg-[#FFD83D]/20 text-[#FFD83D] hover:bg-[#FFD83D]/30 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg text-xs font-bold font-mono transition-colors border border-[#FFD83D]/30"
+                className="px-3.5 py-1.5 bg-[#FFD83D]/20 text-[#FFD83D] hover:bg-[#FFD83D]/30 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg text-xs font-bold font-mono transition-colors border border-[#FFD83D]/30 select-none"
               >
                 ATIVAR (-{upgradeCostAuto})
               </button>
             </div>
           </div>
 
-          <div className="mt-8 bg-[#A5E600]/5 border border-[#A5E600]/20 rounded-2xl p-6">
-            <h3 className="font-mono text-[#A5E600] text-sm mb-2 flex items-center gap-2">
-              <Shield className="w-4 h-4" /> Segurança de Nível Alfa Ativa
+          <div className="mt-4 sm:mt-6 bg-[#A5E600]/5 border border-[#A5E600]/20 rounded-2xl p-4 sm:p-5">
+            <h3 className="font-mono text-[#A5E600] text-xs sm:text-sm mb-1.5 sm:mb-2 flex items-center gap-1.5">
+              <Shield className="w-3.5 h-3.5" /> Segurança de Nível Alfa Ativa
             </h3>
-            <p className="text-zinc-400 text-xs leading-relaxed">
+            <p className="text-zinc-400 text-[11px] sm:text-xs leading-relaxed">
               Enquanto você estiver na cápsula de segurança, os fragmentos extraídos são sincronizados na rede sem perdas. Seus Bots observam seu hash rate se você melhorar muito os sistemas, interagindo de vez em quando no feed. Continue extraindo para se manter produtivo.
             </p>
           </div>

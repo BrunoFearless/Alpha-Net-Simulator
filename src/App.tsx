@@ -12,10 +12,13 @@ import { SettingsView } from './views/Settings';
 import { DataMiningView } from './views/DataMining';
 import { MissionsView } from './views/Missions';
 import { AvatarEditorView } from './views/AvatarEditor';
+import { QuantumArenaView } from './views/QuantumArena';
+import { AffinitiesDossierView } from './views/AffinitiesDossier';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentView, setCurrentView] = useState('feed');
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   // Boot sequence simulation
   useEffect(() => {
@@ -40,13 +43,17 @@ export default function App() {
       case 'feed':
         return <HomeFeed />;
       case 'modules':
-        return <ModuleHub />;
+        return <ModuleHub onNavigate={setCurrentView} />;
       case 'mining':
         return <DataMiningView />;
       case 'missions':
         return <MissionsView />;
       case 'avatar':
         return <AvatarEditorView />;
+      case 'arena':
+        return <QuantumArenaView />;
+      case 'affinities':
+        return <AffinitiesDossierView />;
       case 'profile':
         return <ProfileView />;
       case 'communities':
@@ -74,11 +81,16 @@ export default function App() {
       <div className="fixed bottom-[-10%] right-[-5%] w-[400px] h-[400px] bg-[#B84CFF]/10 rounded-full blur-[120px] pointer-events-none" />
       <div className="fixed top-[20%] right-[10%] w-[300px] h-[300px] bg-[#A5E600]/5 rounded-full blur-[100px] pointer-events-none" />
 
-      <Sidebar currentView={currentView} onChangeView={setCurrentView} />
+      <Sidebar 
+        currentView={currentView} 
+        onChangeView={setCurrentView} 
+        mobileOpen={mobileOpen}
+        onCloseMobile={() => setMobileOpen(false)}
+      />
       
-      <div className="flex-1 ml-64 flex flex-col relative z-10 w-full">
-        <Topbar />
-        <main className="flex-1 overflow-y-auto px-8 pt-28 pb-12 w-full custom-scroll">
+      <div className="flex-1 lg:ml-64 ml-0 flex flex-col relative z-10 w-full overflow-hidden">
+        <Topbar onToggleMobile={() => setMobileOpen(true)} />
+        <main className="flex-1 overflow-y-auto px-4 sm:px-8 pt-28 pb-12 w-full custom-scroll">
           {renderView()}
         </main>
       </div>
