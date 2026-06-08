@@ -1,5 +1,5 @@
 {
-  "name": "Alpha Net Simulator",
+  "name": "Alpha Simulator",
   "description": "Explore the future before it exists.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
