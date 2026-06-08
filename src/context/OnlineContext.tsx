@@ -288,6 +288,7 @@ export const OnlineProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     if (isOnline && !isSimulated) {
       const q = query(collection(db, 'users'), limit(50));
       const unsubscribe = onSnapshot(q, (snap) => {
+        console.log('DEBUG: Online users snapshot received. Count:', snap.docs.length);
         const list: User[] = [];
         snap.forEach((docSnap) => {
           const data = docSnap.data();
